@@ -32,7 +32,6 @@ const ddcNrs = {
     brightness: "10",
     contrast: "12"
 };
-let panelButton, panelButtonText;
 const ddcutil_path = "/usr/bin/ddcutil";
 
 function changeSet(display, set, value) {
@@ -86,6 +85,7 @@ const Indicator = GObject.registerClass(
                     display['i'] = i;
                     display['name'] = arr[2].split(':')[2].trim() || "monitor " + (Number(display.i) + 1);
                     display['bus'] = arr[1].split('/dev/i2c-')[1].trim();
+                    display['sliderTimeouts'] = {};
                     await newDisplayObj(display);
                     newOverlaySlider(display);
                     displays.push(display);
@@ -133,7 +133,8 @@ const Indicator = GObject.registerClass(
                     const limit = async () => {
                         if (waiting) return;
                         waiting = true;
-                        await new Promise(r => setTimeout(r, 400));
+                        await new Promise(r => display.sliderTimeouts[set] = setTimeout(r, 400));
+                        delete display.sliderTimeouts[set];
                         changeSet(display, set, oldValue);
                         waiting = false;
                     }
@@ -183,6 +184,7 @@ class Extension {
             d.overlay.set_opacity(0);
             Main.uiGroup.remove_actor(overlay);
             overlay.destroy();
+            Object.values(d.sliderTimeouts).forEach(timeout=>clearTimeout(timeout));
         })
         displays.length = 0;
         this._indicator.destroy();
