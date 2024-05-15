@@ -4,5 +4,6 @@
   "uuid": "ddc-brightness-contrast-extra-dimming@gijs",
   "shell-version": [
     "42"
-  ]
+  ],
+  "url":"https://github.com/tzawezin/gnome-ddc-brightness-contrast-extra-dimming"
 }
