@@ -1,3 +1,3 @@
-set monitor DDC brightness/contrast + extra dimming
+Set Monitor DDC Brightness/Contrast + Extra Dimming
 
 ![screenshot](screenshot.png)
