@@ -1,0 +1,8 @@
+{
+  "name": "set monitor DDC brightness/contrast + extra dimming",
+  "description": "Controll brightness and contrast with ddc and extra dimming with black overlay, It requires ddcutil to be installed, i2c permissions for non-root users configured.",
+  "uuid": "ddc-brightness-contrast-extra-dimming@gijs",
+  "shell-version": [
+    "42"
+  ]
+}
