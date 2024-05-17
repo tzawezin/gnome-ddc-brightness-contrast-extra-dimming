@@ -35,11 +35,10 @@ const ddcNrs = {
 const ddcutil_path = "/usr/bin/ddcutil";
 
 function changeSet(display, set, value) {
-    GLib.spawn_command_line_async(`${ddcutil_path} setvcp ${ddcNrs[set]} ${value} --bus ${display.bus}`)
+    GLib.spawn_command_line_async(`${ddcutil_path} setvcp ${ddcNrs[set]} ${value} --bus ${display.bus}`);
 }
 
-const displays = [];
-
+let displays = [];
 
 async function getCmdOut(cmd) {
     return new Promise((resolve, reject) => {
@@ -58,8 +57,7 @@ async function getCmdOut(cmd) {
                 }
             } catch (e) { }
         });
-    })
-
+    });
 }
 
 const Indicator = GObject.registerClass(
@@ -121,7 +119,6 @@ const Indicator = GObject.registerClass(
                 item.add_child(sliderT);
                 this.menu.addMenuItem(item);
             }
-
             const newDisplayObj = async (display) => {
                 const makeSlider = async (set) => {
                     let menuItem = new PopupMenu.PopupBaseMenuItem({ activate: false });
@@ -153,7 +150,6 @@ const Indicator = GObject.registerClass(
                     menuItem.add_child(sliderText);
                     this.menu.addMenuItem(menuItem);
                 }
-
                 let itemtitle = new PopupMenu.PopupBaseMenuItem({ activate: false });
                 const title = new St.Label({ text: display.name });
                 itemtitle.add_child(title);
@@ -165,29 +161,30 @@ const Indicator = GObject.registerClass(
             }
             getDisplays();
         }
-    });
+        destroy() {
+            displays.forEach(d => {
+                Object.values(d.sliderTimeouts).forEach(timeout => clearTimeout(timeout));
+                d.overlay.set_opacity(0);
+                Main.uiGroup.remove_actor(overlay);
+                overlay.destroy();
+            });
+            super.destroy();
+        }
+    }
+);
 
 class Extension {
     constructor(uuid) {
         this._uuid = uuid;
-
         ExtensionUtils.initTranslations(GETTEXT_DOMAIN);
     }
-
     enable() {
         this._indicator = new Indicator();
         Main.panel.addToStatusArea(this._uuid, this._indicator);
     }
-
     disable() {
-        displays.forEach(d => {
-            d.overlay.set_opacity(0);
-            Main.uiGroup.remove_actor(overlay);
-            overlay.destroy();
-            Object.values(d.sliderTimeouts).forEach(timeout=>clearTimeout(timeout));
-        })
-        displays.length = 0;
         this._indicator.destroy();
+        displays = null;
         this._indicator = null;
     }
 }
