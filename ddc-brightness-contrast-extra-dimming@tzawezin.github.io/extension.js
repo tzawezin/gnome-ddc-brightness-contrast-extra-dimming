@@ -74,7 +74,9 @@ const Indicator = GObject.registerClass(
                 let res;
                 try {
                     res = await getCmdOut(['ddcutil', 'detect', '--brief']);
-                } catch (e) { }
+                } catch (e) { 
+                    logError(e, 'getCmdOutError');
+                }
                 if (!res) {
                     return;
                 }
