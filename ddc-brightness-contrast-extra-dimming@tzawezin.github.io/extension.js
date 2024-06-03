@@ -55,7 +55,9 @@ async function getCmdOut(cmd) {
                         resolve(stdout);
                     }
                 }
-            } catch (e) { }
+            } catch (e) {
+                reject(e);
+            }
         });
     });
 }
@@ -69,7 +71,10 @@ const Indicator = GObject.registerClass(
                 style_class: 'system-status-icon',
             }));
             const getDisplays = async () => {
-                const res = await getCmdOut(['ddcutil', 'detect', '--brief']);
+                let res;
+                try {
+                    res = await getCmdOut(['ddcutil', 'detect', '--brief']);
+                } catch (e) { }
                 if (!res) {
                     return;
                 }
@@ -130,8 +135,10 @@ const Indicator = GObject.registerClass(
                     const limit = async () => {
                         if (waiting) return;
                         waiting = true;
-                        await new Promise(r => display.sliderTimeouts[set] = setTimeout(r, 400));
-                        delete display.sliderTimeouts[set];
+                        await new Promise(r => display.sliderTimeouts[set] = setTimeout(() => {
+                            delete display.sliderTimeouts[set];
+                            r();
+                        }, 400));
                         changeSet(display, set, oldValue);
                         waiting = false;
                     }
@@ -184,7 +191,7 @@ class Extension {
     }
     disable() {
         this._indicator.destroy();
-        displays = null;
+        displays = [];
         this._indicator = null;
     }
 }
