@@ -74,7 +74,7 @@ const Indicator = GObject.registerClass(
                 let res;
                 try {
                     res = await getCmdOut(['ddcutil', 'detect', '--brief']);
-                } catch (e) { 
+                } catch (e) {
                     logError(e, 'getCmdOutError');
                 }
                 if (!res) {
@@ -88,8 +88,10 @@ const Indicator = GObject.registerClass(
                     display['ddc'] = !v.includes('Invalid')
                     const arr = v.split('\n');
                     display['i'] = i;
-                    display['name'] = arr[2].split(':')[2].trim() || "monitor " + (Number(display.i) + 1);
-                    display['bus'] = arr[1].split('/dev/i2c-')[1].trim();
+                    const nameLine = arr.find(a => a.includes('Monitor'));
+                    const busLine = arr.find(a => a.includes('I2C bus'));
+                    display['name'] = nameLine.split(':')[2].trim() || "monitor " + (Number(display.i) + 1);
+                    display['bus'] = busLine.split('/dev/i2c-')[1].trim();
                     display['sliderTimeouts'] = {};
                     await newDisplayObj(display);
                     newOverlaySlider(display);
