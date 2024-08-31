@@ -176,8 +176,8 @@ const Indicator = GObject.registerClass(
             displays.forEach(d => {
                 Object.values(d.sliderTimeouts).forEach(timeout => clearTimeout(timeout));
                 d.overlay.set_opacity(0);
-                Main.uiGroup.remove_actor(overlay);
-                overlay.destroy();
+                Main.uiGroup.remove_actor(d.overlay);
+                d.overlay.destroy();
             });
             super.destroy();
         }
