@@ -17,28 +17,27 @@
  */
 
 /* exported init */
-
 const GETTEXT_DOMAIN = 'my-indicator-extension';
-
-const { GLib, GObject, St, Gio, Clutter } = imports.gi;
-const Slider = imports.ui.slider;
-
-const ExtensionUtils = imports.misc.extensionUtils;
-const Main = imports.ui.main;
-const PanelMenu = imports.ui.panelMenu;
-const PopupMenu = imports.ui.popupMenu;
-const _ = ExtensionUtils.gettext;
+import Gio from 'gi://Gio';
+import GObject from 'gi://GObject';
+import St from 'gi://St';
+import Clutter from 'gi://Clutter';
+import GLib from 'gi://GLib';
+import { Slider } from 'resource:///org/gnome/shell/ui/slider.js';
+import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
+import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 const ddcNrs = {
     brightness: "10",
     contrast: "12"
 };
 const ddcutil_path = "/usr/bin/ddcutil";
+let displays = [];
 
 function changeSet(display, set, value) {
     GLib.spawn_command_line_async(`${ddcutil_path} setvcp ${ddcNrs[set]} ${value} --bus ${display.bus}`);
 }
-
-let displays = [];
 
 async function getCmdOut(cmd) {
     return new Promise((resolve, reject) => {
@@ -61,7 +60,6 @@ async function getCmdOut(cmd) {
         });
     });
 }
-
 const Indicator = GObject.registerClass(
     class Indicator extends PanelMenu.Button {
         _init() {
@@ -100,7 +98,7 @@ const Indicator = GObject.registerClass(
             }
             const newOverlaySlider = (display) => {
                 let item = new PopupMenu.PopupBaseMenuItem({ activate: false });
-                let slider = new Slider.Slider(0);
+                let slider = new Slider(0);
                 let sliderT = new St.Label({ text: '0%' });
                 const monitors = [...Main.layoutManager.monitors];
                 let monitor = monitors[(display.i + 1) % 3];
@@ -117,7 +115,7 @@ const Indicator = GObject.registerClass(
                     }),
                     opacity: 0
                 });
-                Main.uiGroup.add_actor(display.overlay);
+                Main.uiGroup.add_child(display.overlay);
                 const sliderChange = () => {
                     const value = slider.value * 100;
                     sliderT.text = value.toFixed(0) + '%';
@@ -133,7 +131,7 @@ const Indicator = GObject.registerClass(
                     let menuItem = new PopupMenu.PopupBaseMenuItem({ activate: false });
                     let oldValue = await getCmdOut(['ddcutil', 'getvcp', '--brief', ddcNrs[set], '--bus', display.bus]);
                     oldValue = Number(oldValue.split(' ')[3]);
-                    let slider = new Slider.Slider((oldValue) / 100);
+                    let slider = new Slider((oldValue) / 100);
                     let sliderText = new St.Label({ text: oldValue + '%' });
                     let waiting = false;
                     const limit = async () => {
@@ -175,8 +173,9 @@ const Indicator = GObject.registerClass(
         destroy() {
             displays.forEach(d => {
                 Object.values(d.sliderTimeouts).forEach(timeout => clearTimeout(timeout));
+                if (!d.overlay) return
                 d.overlay.set_opacity(0);
-                Main.uiGroup.remove_actor(d.overlay);
+                Main.uiGroup.remove_child(d.overlay);
                 d.overlay.destroy();
             });
             super.destroy();
@@ -184,11 +183,7 @@ const Indicator = GObject.registerClass(
     }
 );
 
-class Extension {
-    constructor(uuid) {
-        this._uuid = uuid;
-        ExtensionUtils.initTranslations(GETTEXT_DOMAIN);
-    }
+export default class MonitorDDCBrightnessContrastExtraDimmingExtension extends Extension {
     enable() {
         this._indicator = new Indicator();
         Main.panel.addToStatusArea(this._uuid, this._indicator);
@@ -198,8 +193,4 @@ class Extension {
         displays = [];
         this._indicator = null;
     }
-}
-
-function init(meta) {
-    return new Extension(meta.uuid);
 }
