@@ -101,7 +101,7 @@ const Indicator = GObject.registerClass(
                 let slider = new Slider(0);
                 let sliderT = new St.Label({ text: '0%' });
                 const monitors = [...Main.layoutManager.monitors];
-                let monitor = monitors[(display.i + 1) % 3];
+                let monitor = monitors[(display.i + 1) % monitors.length];
                 display.overlay = new Clutter.Actor({
                     x: monitor.x,
                     y: monitor.y,
