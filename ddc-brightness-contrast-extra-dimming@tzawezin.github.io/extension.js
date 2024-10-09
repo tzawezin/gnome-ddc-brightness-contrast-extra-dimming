@@ -39,6 +39,7 @@ function changeSet(display, set, value) {
 }
 
 let displays = [];
+let overviewHandlers = [];
 
 async function getCmdOut(cmd) {
     return new Promise((resolve, reject) => {
@@ -70,6 +71,8 @@ const Indicator = GObject.registerClass(
                 icon_name: 'face-smile-symbolic',
                 style_class: 'system-status-icon',
             }));
+            overviewHandlers.push(Main.overview.connect('showing', this._onOverviewShowing));
+            overviewHandlers.push(Main.overview.connect('hiding', this._onOverviewHiding));
             const getDisplays = async () => {
                 let res;
                 try {
@@ -117,6 +120,7 @@ const Indicator = GObject.registerClass(
                     }),
                     opacity: 0
                 });
+                display.overlay.reactive = false;
                 Main.uiGroup.add_actor(display.overlay);
                 const sliderChange = () => {
                     const value = slider.value * 100;
@@ -172,6 +176,15 @@ const Indicator = GObject.registerClass(
             }
             getDisplays();
         }
+
+        _onOverviewShowing() {
+            displays.forEach(d => Main.uiGroup.remove_actor(d.overlay));
+        }
+
+        _onOverviewHiding() {
+            displays.forEach(d => Main.uiGroup.add_actor(d.overlay));
+        }
+
         destroy() {
             displays.forEach(d => {
                 Object.values(d.sliderTimeouts).forEach(timeout => clearTimeout(timeout));
@@ -179,6 +192,7 @@ const Indicator = GObject.registerClass(
                 Main.uiGroup.remove_actor(d.overlay);
                 d.overlay.destroy();
             });
+            overviewHandlers.forEach(h => Main.overview.disconnect(h));
             super.destroy();
         }
     }
@@ -196,6 +210,7 @@ class Extension {
     disable() {
         this._indicator.destroy();
         displays = [];
+        overviewHandlers = [];
         this._indicator = null;
     }
 }
