@@ -34,6 +34,7 @@ const ddcNrs = {
 };
 const ddcutil_path = "/usr/bin/ddcutil";
 let displays = [];
+let overviewHandlers = [];
 
 function changeSet(display, set, value) {
     GLib.spawn_command_line_async(`${ddcutil_path} setvcp ${ddcNrs[set]} ${value} --bus ${display.bus}`);
@@ -68,6 +69,8 @@ const Indicator = GObject.registerClass(
                 icon_name: 'face-smile-symbolic',
                 style_class: 'system-status-icon',
             }));
+            overviewHandlers.push(Main.overview.connect('showing', this._onOverviewShowing));
+            overviewHandlers.push(Main.overview.connect('hiding', this._onOverviewHiding));
             const getDisplays = async () => {
                 let res;
                 try {
@@ -115,6 +118,7 @@ const Indicator = GObject.registerClass(
                     }),
                     opacity: 0
                 });
+                display.overlay.reactive = false;
                 Main.uiGroup.add_child(display.overlay);
                 const sliderChange = () => {
                     const value = slider.value * 100;
@@ -170,6 +174,15 @@ const Indicator = GObject.registerClass(
             }
             getDisplays();
         }
+
+        _onOverviewShowing() {
+            displays.forEach(d => Main.uiGroup.remove_actor(d.overlay));
+        }
+
+        _onOverviewHiding() {
+            displays.forEach(d => Main.uiGroup.add_actor(d.overlay));
+        }
+
         destroy() {
             displays.forEach(d => {
                 Object.values(d.sliderTimeouts).forEach(timeout => clearTimeout(timeout));
@@ -178,6 +191,7 @@ const Indicator = GObject.registerClass(
                 Main.uiGroup.remove_child(d.overlay);
                 d.overlay.destroy();
             });
+            overviewHandlers.forEach(h => Main.overview.disconnect(h));
             super.destroy();
         }
     }
@@ -191,6 +205,7 @@ export default class MonitorDDCBrightnessContrastExtraDimmingExtension extends E
     disable() {
         this._indicator.destroy();
         displays = [];
+        overviewHandlers = [];
         this._indicator = null;
     }
 }
