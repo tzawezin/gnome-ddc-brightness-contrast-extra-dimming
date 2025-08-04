@@ -240,8 +240,11 @@ const Indicator = GObject.registerClass(
     destroy() {
       displays.forEach((d) => {
         Object.values(d.sliderTimeouts).forEach((timeout) => clearTimeout(timeout));
+        if (!d.overlay) {
+          return;
+        }
         d.overlay.set_opacity(0);
-        Main.uiGroup.remove_actor(d.overlay);
+        d.isOverlayActive && !d.isOverlayBlocked && Main.uiGroup.remove_actor(d.overlay);
         d.overlay.destroy();
       });
       overviewHandlers.forEach((h) => Main.overview.disconnect(h));
