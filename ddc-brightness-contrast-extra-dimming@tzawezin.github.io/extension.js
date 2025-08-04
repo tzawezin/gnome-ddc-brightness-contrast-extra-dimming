@@ -238,7 +238,7 @@ const Indicator = GObject.registerClass(
           return;
         }
         d.overlay.set_opacity(0);
-        d.isOverlayActive && Main.uiGroup.remove_child(d.overlay);
+        d.isOverlayActive && !d.isOverlayBlocked && Main.uiGroup.remove_child(d.overlay);
         d.overlay.destroy();
       });
       overviewHandlers.forEach((h) => Main.overview.disconnect(h));
